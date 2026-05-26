@@ -31,10 +31,8 @@ public class MyGridVisual : MonoBehaviour
     public async UniTask RefillAnimation(HashSet<RefillData> data)
     {
         List<UniTask> tasks = new List<UniTask>();
-        int i = 0;
         foreach (var item in data)
         {
-            Debug.Log(i++.ToString());
             GameObject obj = Instantiate(_pref);
             DiamondVisual visual = obj.GetComponent<DiamondVisual>();
             _visualMap[item.Diamon] = visual;

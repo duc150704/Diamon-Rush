@@ -43,11 +43,6 @@ public class Board : MonoBehaviour
             }
                 
             _cellSelected = _Grid.TryGetCell(InputManager.Instance.GetMousePostion(), out _selected);
-
-            if(_cellSelected && _selected.HasDiamon())
-            {
-                Debug.Log($"{_selected.Diamond.Type}");
-            }
         }
 
         if (Input.GetKeyUp(KeyCode.Mouse0) && _selected != null && _selected.HasDiamon())
@@ -100,19 +95,30 @@ public class Board : MonoBehaviour
         _Grid.Swap(diamon.GridPos, neighbor.GridPos);
         await _gridVisual.SwapAnimation(neighbor, diamon);
 
+        while(Check())
+        {
+            await _gridVisual.DisapearAnimate(_matchedCells);
+            ClearMatched(_matchedCells);
+            FallDown();
+            await _gridVisual.FallDown();
 
-        VerticalCheck();
-        HorizontalCheck();
-        await _gridVisual.DisapearAnimate(_matchedCells);
-        ClearMatched(_matchedCells);
-        FallDown();
-        await _gridVisual.FallDown();
+            HashSet<RefillData> a = Refill();
+            await _gridVisual.RefillAnimation(a);
 
-        HashSet<RefillData> a = Refill();
-        await _gridVisual.RefillAnimation(a);
+            _matchedCells.Clear();
+        }
+        //VerticalCheck();
+        //HorizontalCheck();
+        
 
-        _matchedCells.Clear();
         _isSwapping = false;
+    }
+
+    public bool Check()
+    {
+        bool a = VerticalCheck();
+        bool b = HorizontalCheck();
+        return a || b;
     }
 
     public void ClearMatched(HashSet<GridCell> cells)
@@ -144,8 +150,9 @@ public class Board : MonoBehaviour
         }
     }
 
-    private void VerticalCheck()
+    private bool VerticalCheck()
     {
+        int z = 0;
         for(int i = 0; i < _Grid.Width; i++)
         {
             int idx = 1;
@@ -168,6 +175,7 @@ public class Board : MonoBehaviour
                         {
                             _matchedCells.Add(_Grid.GetCell(new Vector2Int(i, j - k)));
                         }
+                        z++;
                     }
                     idx = 1;
                 }
@@ -177,13 +185,16 @@ public class Board : MonoBehaviour
                 for (int k = 1; k <= idx; k++)
                 {
                     _matchedCells.Add(_Grid.GetCell(new Vector2Int(i, _Grid.Height - k)));
+                    z++;
                 }
             }
         }
+        return z > 0;
     }
 
-    private void HorizontalCheck()
+    private bool HorizontalCheck()
     {
+        int z = 0;
         for (int i = 0; i < _Grid.Height; i++)
         {
             int idx = 1;
@@ -207,6 +218,7 @@ public class Board : MonoBehaviour
                         {
                             _matchedCells.Add(_Grid.GetCell(new Vector2Int(j - k, i)));
                         }
+                        z++;
                     }
                     idx = 1;
                 }
@@ -218,8 +230,10 @@ public class Board : MonoBehaviour
                 {
                     _matchedCells.Add(_Grid.GetCell(new Vector2Int(_Grid.Width - k, i)));
                 }
+                z++;
             }
         }
+        return z > 0;
     }
 
     private void FallDown()
