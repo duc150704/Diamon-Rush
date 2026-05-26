@@ -4,6 +4,6 @@ using UnityEngine;
 
 public interface IOnGrid
 {
-    public Vector2Int GridPos { get; set; }
+    public Vector2Int GridPos { get;}
 }
 
