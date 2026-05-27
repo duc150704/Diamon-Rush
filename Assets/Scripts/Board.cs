@@ -94,6 +94,14 @@ public class Board : MonoBehaviour
 
         _Grid.Swap(diamon.GridPos, neighbor.GridPos);
         await _gridVisual.SwapAnimation(neighbor, diamon);
+        bool c = Check();
+        if (c == false)
+        {
+            _Grid.Swap(diamon.GridPos, neighbor.GridPos);
+            await _gridVisual.SwapAnimation(neighbor, diamon);
+            _isSwapping = false;
+            return;
+        }
 
         while(Check())
         {
@@ -101,7 +109,7 @@ public class Board : MonoBehaviour
             ClearMatched(_matchedCells);
             FallDown();
             await _gridVisual.FallDown();
-
+            
             HashSet<RefillData> a = Refill();
             await _gridVisual.RefillAnimation(a);
 

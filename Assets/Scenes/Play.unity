@@ -345,10 +345,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ce5dd70956e8e564b921e03caf2f3f55, type: 2}
   - {fileID: 11400000, guid: e873a31a5c975a442b6ead926358aac5, type: 2}
   - {fileID: 11400000, guid: 1b788f4d46fa4f04aa1564f29afcba30, type: 2}
-  - {fileID: 11400000, guid: f8ba190d1aa44824ba99adc0131b62fe, type: 2}
-  - {fileID: 11400000, guid: e056c743ed954594193ed2066077fb00, type: 2}
-  - {fileID: 11400000, guid: 402e25ed52447614ca64ebd47d3a8b2a, type: 2}
-  - {fileID: 11400000, guid: b291ba021831e9a40a11526619462519, type: 2}
   _gridVisual: {fileID: 1217823206}
 --- !u!4 &1295902895
 Transform:

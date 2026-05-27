@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Diamon : IPoolable, IOnGrid
+public class Diamon : IPoolable
 {
     private Vector2Int _gridPos;
 
