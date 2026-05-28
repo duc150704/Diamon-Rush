@@ -28,7 +28,7 @@ public class DiamondVisual : MonoBehaviour, IPoolable
         return _transform.DOMove(worldPos, time).ToUniTask();
     }
 
-    public async UniTask playdisapearanim()
+    public async UniTask PlayDisapearAnimation()
     {
         await _transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack).ToUniTask();
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,10 +6,12 @@ using UnityEngine;
 public class Diamon : IPoolable
 {
     private Vector2Int _gridPos;
+    private System.Random random = new System.Random();
 
-    public DiamonSO Data { get; private set; }
+    public int X { get => _gridPos.x; set => _gridPos.x = value; }
+    public int Y { get => _gridPos.y; set => _gridPos.y = value; }
     public bool IsMatch {  get; private set; }
-    public EDiamonType Type { get; private set; }
+    public EDiamonType Type { get; set; }
     public Vector2Int GridPos
     {
         get => _gridPos;
@@ -24,8 +27,14 @@ public class Diamon : IPoolable
     {
         IsActive = true;
         _gridPos = gridPos; 
-        Data = data;
         Type = data.Type;
+    }
+
+    public Diamon(int x, int y, EDiamonType type)
+    {
+        X = x;
+        Y = y;
+        Type = type;
     }
 
     public void Activate()
@@ -37,4 +46,10 @@ public class Diamon : IPoolable
     {
         IsActive = false;
     }
+
+    //public void OnActivate()
+    //{
+    //    Array types = Enum.GetValues(typeof(EDiamonType));
+    //    Type = (EDiamonType)types.GetValue(random.Next(types.Length));
+    //}
 }

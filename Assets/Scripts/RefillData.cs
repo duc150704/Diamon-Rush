@@ -4,6 +4,6 @@ using UnityEngine;
 
 public struct RefillData
 {
-    public Diamon Diamon;
+    public GridCell Cell;
     public Vector3 RespawnPosition;
 }

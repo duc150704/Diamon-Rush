@@ -10,20 +10,33 @@ public class MyGridVisual : MonoBehaviour
 
     private MyGrid _diamondGrid;
     private Dictionary<Diamon, DiamondVisual> _visualMap = new();
-    
+    private Dictionary<EDiamonType, DiamonSO> _dataMap = new();
 
-    public void Init(MyGrid myGrid)
+    private DiamonSO[] diamonSOs;
+    public void Init(MyGrid myGrid, DiamonSO[] diamonSOss)
     {
         _diamondGrid = myGrid;
-        for(int i = 0; i < _diamondGrid.Width; i++)
+        diamonSOs = diamonSOss;
+        InitData();
+
+        for (int i = 0; i < _diamondGrid.Width; i++)
         {
             for( int j = 0;j < _diamondGrid.Height; j++)
             {
                 GameObject obj = Instantiate(_pref);
                 DiamondVisual visual = obj.GetComponent<DiamondVisual>();
                 _visualMap[_diamondGrid.GetCell(new Vector2Int(i, j)).Diamond] = visual;
-                visual.Visualize(_diamondGrid.GetCell(new Vector2Int(i, j)).Diamond.Data, _diamondGrid.GridToWorld(new Vector2Int(i, j)));
+                EDiamonType tmp = _diamondGrid.GetCell(i, j).Diamond.Type;
+                visual.Visualize(_dataMap[tmp], _diamondGrid.GridToWorld(new Vector2Int(i, j)));
             }
+        }
+    }
+
+    private void InitData()
+    {
+        for(int i = 0;i < diamonSOs.Length; i++)
+        {
+            _dataMap[diamonSOs[i].Type] = diamonSOs[i];
         }
     }
 
@@ -34,9 +47,9 @@ public class MyGridVisual : MonoBehaviour
         {
             GameObject obj = Instantiate(_pref);
             DiamondVisual visual = obj.GetComponent<DiamondVisual>();
-            _visualMap[item.Diamon] = visual;
-            visual.Visualize(item.Diamon.Data, item.RespawnPosition);
-            tasks.Add(visual.Move(_diamondGrid.GridToWorld(item.Diamon.GridPos), 0.25f));
+            _visualMap[item.Cell.Diamond] = visual;
+            visual.Visualize(_dataMap[item.Cell.Diamond.Type], item.RespawnPosition);
+            tasks.Add(visual.Move(_diamondGrid.GridToWorld(item.Cell.Diamond.GridPos), 0.25f));
         }
         
         await UniTask.WhenAll(tasks);
@@ -58,7 +71,7 @@ public class MyGridVisual : MonoBehaviour
         List<UniTask> uniTask = new();
         foreach (var item in _cell)
         {
-            uniTask.Add(_visualMap[item.Diamond].playdisapearanim());
+            uniTask.Add(_visualMap[item.Diamond].PlayDisapearAnimation());
             
         }
         await UniTask.WhenAll(uniTask);
@@ -78,7 +91,7 @@ public class MyGridVisual : MonoBehaviour
             for (int j = 0; j < _diamondGrid.Height; j++)
             {
                 Diamon a = _diamondGrid.GetCell(new Vector2Int(i, j)).Diamond;
-                if (a == null)
+                if (!a.IsActive)
                     continue;
                 uniTask.Add(_visualMap[a].Move(_diamondGrid.GridToWorld(a.GridPos), _swapTime));
             }

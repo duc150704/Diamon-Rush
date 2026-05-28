@@ -21,6 +21,6 @@ public class GridCell : IOnGrid
         _gridPos = gridPos;
     }
 
-    public bool HasDiamon()
-        => this.Diamond != null;
+    public bool HasActiveDiamon()
+        => this.Diamond.IsActive;
 }

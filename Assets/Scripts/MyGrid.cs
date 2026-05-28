@@ -1,10 +1,5 @@
 using UnityEngine;
 
-public enum Direction
-{
-    Up, Down, Left, Right, None
-}
-
 public class MyGrid
 {
     public int Width { get; private set; }
@@ -35,7 +30,7 @@ public class MyGrid
         }
     }
 
-    public bool Swap(Vector2Int from, Vector2Int to)
+    public bool SwapDiamon(Vector2Int from, Vector2Int to)
     {
         if (!IsValid(from) || !IsValid(to))
             return false;
@@ -43,10 +38,31 @@ public class MyGrid
         if (_cells[from.x, from.y].IsBlocked || _cells[to.x, to.y].IsBlocked) 
             return false;
 
+        if (!_cells[from.x, from.y].HasActiveDiamon() || !_cells[to.x, to.y].HasActiveDiamon()) // iugguhohfufutf
+            return false;
+
         Diamon tmp = _cells[from.x, from.y].Diamond;
 
         SetDiamond(from, GetCell(to).Diamond);
         SetDiamond(to, tmp);
+        return true;
+    }
+
+    public bool SwapDiamon(int x1, int y1, int x2, int y2)
+    {
+        if (!IsValid(x1, y1) || !IsValid(x2, y2))
+            return false;
+
+        if (_cells[x1, y1].IsBlocked || _cells[x2, y2].IsBlocked)
+            return false;
+
+        if (_cells[x1, y1].Diamond == null || _cells[x2, y2].Diamond == null) // diamon khong duocj null
+            return false;
+
+        Diamon tmp = _cells[x1, y1].Diamond;
+
+        SetDiamond(x1, y1, GetCell(x2, y2).Diamond);
+        SetDiamond(x2, y2, tmp);
         return true;
     }
 
@@ -72,7 +88,7 @@ public class MyGrid
         }
 
         GridCell cell = GetCell(pos + neiPos);
-        if (cell == null)
+        if (cell == null || !cell.HasActiveDiamon())
             return false;
 
         neighbor = cell.Diamond;
@@ -91,16 +107,24 @@ public class MyGrid
     }
 
     public bool SetDiamond(Vector2Int gridPos, Diamon value)
+        => SetDiamond(gridPos.x, gridPos.y, value);
+
+
+    public bool SetDiamond(int x, int y, Diamon value)
     {
-        if (!IsValid(gridPos))
+        if(!IsValid(x, y))
             return false;
 
-        _cells[gridPos.x, gridPos.y].Diamond = value;
+        _cells[x, y].Diamond = value;
 
-        if (value != null)
-            _cells[gridPos.x, gridPos.y].Diamond.GridPos = gridPos;
-            
+        if(value != null) // cell chap nhan null diamon
+        {
+            _cells[x, y].Diamond.X = x;
+            _cells[x, y].Diamond.Y = y;
+        }
+
         return true;
+            
     }
 
     public bool SetDiamond(Vector3 worldPos, Diamon value)
@@ -132,6 +156,13 @@ public class MyGrid
         return _cells[gridPos.x, gridPos.y];
     }
 
+    public GridCell GetCell(int x, int y)
+    {
+        if(!IsValid(x, y))
+            return null;
+        return _cells[x, y];
+    }
+
     private Vector2Int WorldToGrid(Vector3 worldPos)
     {
         Vector2Int gridPos = new Vector2Int();
@@ -140,7 +171,9 @@ public class MyGrid
         return gridPos;
     }
 
-    private bool IsValid(Vector2Int gridPos) 
-        => gridPos.x >= 0 && gridPos.y >= 0 && gridPos.x < Width && gridPos.y < Height;
+    private bool IsValid(Vector2Int gridPos)
+        => IsValid(gridPos.x, gridPos.y);
 
+    private bool IsValid(int x, int y)
+        => x >= 0 && y >= 0 && x < Width && y < Height;
 }
