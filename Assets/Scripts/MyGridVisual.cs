@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 public class MyGridVisual : MonoBehaviour
 {
@@ -12,11 +13,11 @@ public class MyGridVisual : MonoBehaviour
     private Dictionary<Diamon, DiamondVisual> _visualMap = new();
     private Dictionary<EDiamonType, DiamonSO> _dataMap = new();
 
-    private DiamonSO[] diamonSOs;
-    public void Init(MyGrid myGrid, DiamonSO[] diamonSOss)
+    private DiamonSO[] _diamonSOs;
+    public void Init(MyGrid myGrid, DiamonSO[] diamonSO)
     {
         _diamondGrid = myGrid;
-        diamonSOs = diamonSOss;
+        _diamonSOs = diamonSO;
         InitData();
 
         for (int i = 0; i < _diamondGrid.Width; i++)
@@ -27,16 +28,30 @@ public class MyGridVisual : MonoBehaviour
                 DiamondVisual visual = obj.GetComponent<DiamondVisual>();
                 _visualMap[_diamondGrid.GetCell(new Vector2Int(i, j)).Diamond] = visual;
                 EDiamonType tmp = _diamondGrid.GetCell(i, j).Diamond.Type;
-                visual.Visualize(_dataMap[tmp], _diamondGrid.GridToWorld(new Vector2Int(i, j)));
+                visual.Visualize(_dataMap[tmp], _diamondGrid.GridToWorld(new Vector2Int(i, j)) + new Vector3(5, 0,0));
             }
         }
+
+        UniTask.Delay(2000);
+        BackToRightPostion().Forget();
+    }
+
+    public async UniTask BackToRightPostion()
+    {
+        List<UniTask> task = new();
+        foreach (var item in _visualMap)
+        {
+            task.Add(item.Value.Move(_diamondGrid.GridToWorld(item.Key.GridPos), 0.5f));
+        }
+
+        await UniTask.WhenAll(task);
     }
 
     private void InitData()
     {
-        for(int i = 0;i < diamonSOs.Length; i++)
+        for (int i = 0; i < _diamonSOs.Length; i++)
         {
-            _dataMap[diamonSOs[i].Type] = diamonSOs[i];
+            _dataMap[_diamonSOs[i].Type] = _diamonSOs[i];
         }
     }
 
@@ -45,11 +60,10 @@ public class MyGridVisual : MonoBehaviour
         List<UniTask> tasks = new List<UniTask>();
         foreach (var item in data)
         {
-            GameObject obj = Instantiate(_pref);
-            DiamondVisual visual = obj.GetComponent<DiamondVisual>();
-            _visualMap[item.Cell.Diamond] = visual;
+            DiamondVisual visual = _visualMap[item.Cell.Diamond];
             visual.Visualize(_dataMap[item.Cell.Diamond.Type], item.RespawnPosition);
-            tasks.Add(visual.Move(_diamondGrid.GridToWorld(item.Cell.Diamond.GridPos), 0.25f));
+            visual.Activate();
+            tasks.Add(visual.Move(_diamondGrid.GridToWorld(item.Cell.GridPos), 0.25f));
         }
         
         await UniTask.WhenAll(tasks);
@@ -66,18 +80,18 @@ public class MyGridVisual : MonoBehaviour
             );
     }
 
-    public async UniTask DisapearAnimate(HashSet<GridCell> _cell)
+    public async UniTask DisapearAnimate(HashSet<Diamon> res)
     {
         List<UniTask> uniTask = new();
-        foreach (var item in _cell)
+        foreach (var diamon in res)
         {
-            uniTask.Add(_visualMap[item.Diamond].PlayDisapearAnimation());
-            
+            uniTask.Add(_visualMap[diamon].Scale(Vector3.zero, 0.2f));
         }
         await UniTask.WhenAll(uniTask);
-        foreach (var item in _cell)
+
+        foreach (var diamon in res)
         {
-            _visualMap[item.Diamond].Deactivate();
+            _visualMap[diamon].Deactivate();
         }
 
         await UniTask.Yield();
@@ -90,10 +104,10 @@ public class MyGridVisual : MonoBehaviour
         {
             for (int j = 0; j < _diamondGrid.Height; j++)
             {
-                Diamon a = _diamondGrid.GetCell(new Vector2Int(i, j)).Diamond;
-                if (!a.IsActive)
+                GridCell a = _diamondGrid.GetCell(new Vector2Int(i, j));
+                if (!a.HasActivateDiamon())
                     continue;
-                uniTask.Add(_visualMap[a].Move(_diamondGrid.GridToWorld(a.GridPos), _swapTime));
+                uniTask.Add(_visualMap[a.Diamond].Move(_diamondGrid.GridToWorld(a.GridPos), _swapTime));
             }
         }
 

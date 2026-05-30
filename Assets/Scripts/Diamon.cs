@@ -6,7 +6,6 @@ using UnityEngine;
 public class Diamon : IPoolable
 {
     private Vector2Int _gridPos;
-    private System.Random random = new System.Random();
 
     public int X { get => _gridPos.x; set => _gridPos.x = value; }
     public int Y { get => _gridPos.y; set => _gridPos.y = value; }

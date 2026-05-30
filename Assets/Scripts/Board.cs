@@ -1,34 +1,23 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Board : MonoBehaviour
 {
-    [SerializeField] private int _width;
-    [SerializeField] private int _height;
-
-    [SerializeField] private float _cellSize;
-
-    [SerializeField] private Vector3 _centerPos;
-    [SerializeField] private Vector3 _offset;
-
-    [SerializeField] private DiamonSO[] _diamondData;
-    [SerializeField] private MyGridVisual _gridVisual;
-
+    private MyGridVisual _gridVisual;
     private MyGrid _grid;
+    private LevelSO _levelSO;
 
     private bool _isSwapping = false;
-
     private GridCell _selected;
-    private bool _cellSelected;
     private Vector3 _dragDir;
 
-
-    private void Start()
-    {
-        InitBoard();
-    }
+    private int _score = 0;
+    private List<EDiamonType> _currentDiamondTypes = new();
+ 
+    public static event Action<int> OnScoreChanged;
 
     private void Update()
     {
@@ -40,20 +29,31 @@ public class Board : MonoBehaviour
                 _dragDir = Vector3.zero;
                 return;
             }
-                
-            _cellSelected = _grid.TryGetCell(InputManager.Instance.GetMousePostion(), out _selected);
+            _grid.TryGetCell(InputManager.Instance.GetMousePostion(), out _selected);
         }
 
-        if (Input.GetKeyUp(KeyCode.Mouse0) && _selected != null && _selected.HasActiveDiamon())
+        if (Input.GetKeyUp(KeyCode.Mouse0) && _selected != null && _selected.HasActivateDiamon())
         {
             _dragDir = InputManager.Instance.GetMousePostion() - _grid.GridToWorld(_selected.GridPos);
-            if (_dragDir.magnitude > _cellSize * 0.5f + 0.1f)
+            if (_dragDir.magnitude > _levelSO.CellSize * 0.5f + 0.1f)
             {
                 Swap(_selected.Diamond, DirectionCalculator.Normolize(_dragDir));
             }
                 
         }
     }
+
+    public void BoardSetUp(LevelSO levelSO, MyGridVisual gridVisual)
+    {
+        _levelSO = levelSO;
+        this._gridVisual = gridVisual;
+
+        _grid = new MyGrid(levelSO.Width, levelSO.Height, levelSO.CellSize, levelSO.CenterPosition, levelSO.Offset);
+        InitGrid();
+        gridVisual.Init(_grid, levelSO.Diamonds.ToArray());
+        GetTypes();
+    }
+
 
     private async void Swap(Diamon diamon, Direction direction)
     {
@@ -67,8 +67,10 @@ public class Board : MonoBehaviour
 
         _grid.SwapDiamon(diamon.GridPos, neighbor.GridPos);
         await _gridVisual.SwapAnimation(neighbor, diamon);
-        HashSet<GridCell> matched = BoardLogic.FindMatches(_grid);
-        if (matched.Count == 0)
+
+        CheckedResult matched = BoardLogic.FindMatches(_grid);
+
+        if (!matched.HasAnyMatched)
         {
             _grid.SwapDiamon(diamon.GridPos, neighbor.GridPos);
             await _gridVisual.SwapAnimation(neighbor, diamon);
@@ -76,35 +78,27 @@ public class Board : MonoBehaviour
             return;
         }
 
-        while(matched.Count > 0)
+        int comboChain = 1;
+        while(matched.HasAnyMatched)
         {
-            await _gridVisual.DisapearAnimate(matched);
-            ClearMatched(matched);
+            await _gridVisual.DisapearAnimate(matched.Diamons);
+
+            _score += BoardLogic.GetScore(matched, comboChain);
+            OnScoreChanged?.Invoke(_score);
+
+            BoardLogic.ClearMatched(matched.Diamons);
+
             BoardLogic.ApplyGravity(_grid);
             await _gridVisual.FallDown();
-            
-            HashSet<RefillData> a = BoardLogic.Refill(_grid);
+
+            HashSet<RefillData> a = BoardLogic.Refill(_grid, _currentDiamondTypes);
             await _gridVisual.RefillAnimation(a);
+
+            comboChain++;
             matched = BoardLogic.FindMatches(_grid);
         }
-
+        WinChecker.Check(new WinCheckData() { Score = _score });
         _isSwapping = false;
-    }
-
-    public void ClearMatched(HashSet<GridCell> cells)
-    {
-        foreach (var item in cells)
-        {
-            //_grid.SetDiamond(item.GridPos, null);
-            _grid.GetCell(item.GridPos).Diamond.Deactivate();
-        }
-    }
-
-    private void InitBoard()
-    {
-        _grid = new MyGrid(_width, _height, _cellSize, _centerPos, _offset);
-        InitGrid();
-        _gridVisual.Init(_grid, _diamondData);
     }
 
     private void InitGrid()
@@ -114,10 +108,18 @@ public class Board : MonoBehaviour
         {
             for (int j = 0; j < _grid.Height; j++)
             {
-                int index = UnityEngine.Random.Range(0, _diamondData.Length );
+                int index = UnityEngine.Random.Range(0, _levelSO.Diamonds.Count );
                 gridPos = new Vector2Int(i, j);
-                _grid.SetDiamond(gridPos, new Diamon(gridPos, _diamondData[index]));
+                _grid.SetDiamond(gridPos, new Diamon(gridPos, _levelSO.Diamonds[index]));
             }
+        }
+    }
+
+    private void GetTypes()
+    {
+        foreach (var item in _levelSO.Diamonds)
+        {
+            _currentDiamondTypes.Add(item.Type);
         }
     }
 }

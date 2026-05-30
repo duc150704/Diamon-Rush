@@ -38,7 +38,7 @@ public class MyGrid
         if (_cells[from.x, from.y].IsBlocked || _cells[to.x, to.y].IsBlocked) 
             return false;
 
-        if (!_cells[from.x, from.y].HasActiveDiamon() || !_cells[to.x, to.y].HasActiveDiamon()) // iugguhohfufutf
+        if (!_cells[from.x, from.y].HasActivateDiamon() || !_cells[to.x, to.y].HasActivateDiamon()) // iugguhohfufutf
             return false;
 
         Diamon tmp = _cells[from.x, from.y].Diamond;
@@ -88,7 +88,7 @@ public class MyGrid
         }
 
         GridCell cell = GetCell(pos + neiPos);
-        if (cell == null || !cell.HasActiveDiamon())
+        if (cell == null || !cell.HasActivateDiamon())
             return false;
 
         neighbor = cell.Diamond;

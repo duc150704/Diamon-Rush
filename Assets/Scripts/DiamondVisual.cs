@@ -28,13 +28,14 @@ public class DiamondVisual : MonoBehaviour, IPoolable
         return _transform.DOMove(worldPos, time).ToUniTask();
     }
 
-    public async UniTask PlayDisapearAnimation()
+    public async UniTask Scale(Vector3 to, float time, Ease ease = Ease.InBack)
     {
-        await _transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack).ToUniTask();
+        await _transform.DOScale(to, time).SetEase(ease).ToUniTask();
     }
 
     public void Activate()
     {
+        Scale(Vector3.one, 0f).Forget();
         gameObject.SetActive(true);
     }
 

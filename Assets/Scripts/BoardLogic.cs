@@ -4,24 +4,31 @@ using UnityEngine;
 
 public static class BoardLogic
 {
-    public static HashSet<GridCell> FindMatches(MyGrid grid)
+    public static CheckedResult FindMatches(MyGrid grid)
     {
-        HashSet<GridCell> matched = new();
+        CheckedResult check = new();
 
-        VerticalCheck(grid, matched);
-        HorizontalCheck(grid, matched);
+        VerticalCheck(grid, check);
+        HorizontalCheck(grid, check);
 
-        return matched;
+        return check;
     }
 
-    private static void Swap(Diamon a, Diamon b)
+    public static void ClearMatched(HashSet<Diamon> diamonds)
     {
-        Diamon tmp = a;
-        a = b;
-        b = tmp;
+        foreach (var item in diamonds)
+        {
+            item.Deactivate();
+        }
     }
 
-    public static HashSet<RefillData> Refill(MyGrid _grid)
+    public static int GetScore(CheckedResult res, int comboChain = 1)
+    {
+        int score = res.GetAllScore();
+        return score;
+    }
+
+    public static HashSet<RefillData> Refill(MyGrid _grid, List<EDiamonType> refillDiamonType)
     {
         HashSet<RefillData> refillData = new();
         for (int i = 0; i < _grid.Width; i++)
@@ -30,7 +37,7 @@ public static class BoardLogic
             {
                 GridCell cell = _grid.GetCell(i, j);
 
-                if (cell.HasActiveDiamon())
+                if (cell.HasActivateDiamon())
                     break;
 
                 RefillData rd = new RefillData()
@@ -39,7 +46,8 @@ public static class BoardLogic
                     RespawnPosition = _grid.GridToWorld(new Vector2Int(i, j + _grid.Height))
                 };
 
-                cell.Diamond.Type = DiamondTypeExtension.Next(5); // sua sau
+                int ramdon = Utilities.RandomInt(0, refillDiamonType.Count);
+                cell.Diamond.Type = refillDiamonType[ramdon];
                 cell.Diamond.Activate();
                 refillData.Add(rd);
             }
@@ -58,7 +66,7 @@ public static class BoardLogic
                 GridCell cur = grid.GetCell(i, up);
                 GridCell pre = grid.GetCell(i, down);
 
-                if (!cur.HasActiveDiamon()) 
+                if (!cur.HasActivateDiamon()) 
                 {
                     up++;
                     continue;
@@ -74,7 +82,7 @@ public static class BoardLogic
         }
     }
 
-    private static void VerticalCheck(MyGrid grid, HashSet<GridCell> matched)
+    private static void VerticalCheck(MyGrid grid, CheckedResult check)
     {
         for (int i = 0; i < grid.Width; i++)
         {
@@ -95,25 +103,31 @@ public static class BoardLogic
                 {
                     if (idx >= 3)
                     {
+                        MatchedData matchedData = new MatchedData();
                         for (int k = 1; k <= idx; k++)
                         {
-                            matched.Add(grid.GetCell(i, j - k));
+                            matchedData.AddDiamond(grid.GetCell(i, j - k).Diamond);
+                            check.AddDiamond(grid.GetCell(i, j - k).Diamond);
                         }
+                        check.AddData(matchedData);
                     }
                     idx = 1;
                 }
             }
             if (idx >= 3)
             {
+                MatchedData matchedData = new MatchedData();
                 for (int k = 1; k <= idx; k++)
                 {
-                    matched.Add(grid.GetCell(i, grid.Height - k));
+                    matchedData.AddDiamond(grid.GetCell(i, grid.Height - k).Diamond);
+                    check.AddDiamond(grid.GetCell(i, grid.Height - k).Diamond);
                 }
+                check.AddData(matchedData);
             }
         }
     }
 
-    private static void HorizontalCheck(MyGrid grid, HashSet<GridCell> matched)
+    private static void HorizontalCheck(MyGrid grid, CheckedResult checkedData)
     {
         for (int i = 0; i < grid.Height; i++)
         {
@@ -134,10 +148,13 @@ public static class BoardLogic
                 {
                     if (idx >= 3)
                     {
+                        MatchedData matchedData = new MatchedData();
                         for (int k = 1; k <= idx; k++)
                         {
-                            matched.Add(grid.GetCell(j - k, i));
+                            matchedData.AddDiamond(grid.GetCell(j - k, i).Diamond);
+                            checkedData.AddDiamond(grid.GetCell(j - k, i).Diamond);
                         }
+                        checkedData.AddData(matchedData);
                     }
                     idx = 1;
                 }
@@ -145,10 +162,13 @@ public static class BoardLogic
 
             if (idx >= 3)
             {
+                MatchedData matchedData = new();
                 for (int k = 1; k <= idx; k++)
                 {
-                    matched.Add(grid.GetCell(grid.Width - k, i));
+                    matchedData.AddDiamond(grid.GetCell(grid.Width - k, i).Diamond);
+                    checkedData.AddDiamond(grid.GetCell(grid.Width - k, i).Diamond);
                 }
+                checkedData.AddData(matchedData);
             }
         }
     }
